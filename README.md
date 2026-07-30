@@ -24,17 +24,17 @@ Docker Version	24.0.x 이상
 Git Version	2.40.x 이상
 
 # 수행 항목 체크리스트
- - [ ]제출 저장소 및 기술문서 -GitHub Repository 링크, 기술문서에 수행 로그 증거 있어야.
- - [ ]터미널 조작 로그 기록 - 모든 작업은 터미널(CLI) 기반으로 수행한다.
+ - [ ]제출 저장소 및 기술문서
+ - [ ]터미널 조작 로그 기록
  - [ ]권한 실습 및 증거 기록
- - [ ]Docker 설치 및 기본 점검 - Dockerfile은 직접 작성해야 한다.
- - [ ]Docker 기본 운영 명령 수행 - 브라우저 접속 증거는 주소창(포트 포함)과 응답 화면 함께.
+ - [ ]Docker 설치 및 기본 점검
+ - [ ]Docker 기본 운영 명령 수행
  - [ ]컨테이너 실행 실습
  - [ ]기존 Dockerfile 기반 커스텀 이미지 제작
- - [ ]포트 매핑 및 접속 증거 - 포트 매핑과 마운트/볼륨은 직접 설정하고 동작을 검증해야
+ - [ ]포트 매핑 및 접속 증거
  - [ ]Docker 볼륨 영속성 검증
  - [ ]Git 설정 및 GitHub 연동
- - [ ]보안 및 개인정보 보호 - 민감정보는 로그/이미지에 남기지 않는다(마스킹 필수).
+ - [ ]보안 및 개인정보 보호
 
  - [ ]보너스과제1. Docker Compose 기초
  - [ ]보너스과제2. Docker Compose 멀티 컨테이너
@@ -57,12 +57,9 @@ Git Version	2.40.x 이상
 
 1) 제출 저장소 및 기술문서
 -[x] 제출은 GitHub Repository 링크로 진행한다.
-  공개(또는 과제 제출 규칙에 맞는 권한)로 생성한다.
-  저장소 링크만으로 아래 산출물 전부를 확인할 수 있어야 한다.
-  GitHub Repository 링크로 제출한다.
-
-  -- 트러블슈팅(문제 → 원인 가설 → 확인 → 해결/대안)
-
+-[x] 공개(또는 과제 제출 규칙에 맞는 권한)로 생성한다.
+-[x] 저장소 링크만으로 아래 산출물 전부를 확인할 수 있어야 한다.
+-[x] GitHub Repository 링크로 제출한다.
 
 2) 기술 문서
 
@@ -88,35 +85,35 @@ Git Version	2.40.x 이상
 (iii) 터미널 조작 로그 (Terminal Operation Log) 명령어 및 결과
 
 ```bash
-$ pwd #현재 위치 확인
-/home/user/project
-$ ls -al # 목록 확인, # 숨김 파일 포함(-a)
+pwd #현재 위치 확인
 
-$ mkdir workspace # 폴더 생성
-$ cd workspace # 이동
+ls -al # 목록 확인, # 숨김 파일 포함(-a)
 
-$ touch empty.txt # 빈 파일 생성
-$ echo 'Hello, Docker and Git!' > memo.txt
+mkdir workspace # 폴더 생성
+cd workspace # 이동
 
-$ cat memo.txt #파일 내용 확인
+touch empty.txt # 빈 파일 생성
+echo 'Hello, Docker and Git!' > memo.txt
+
+cat memo.txt #파일 내용 확인
 Hello, Docker and Git!
 
 
-$ cp memo.txt memo_backup.txt # 파일 복사 후 확인
-$ ls
+cp memo.txt memo_backup.txt # 파일 복사 후 확인
+ls
 empty.txt  memo.txt  memo_backup.txt
 
-$ mv memo_backup.txt renamed_memo.txt # 이름 변경 (이동)
-$ ls
+mv memo_backup.txt renamed_memo.txt # 이름 변경 (이동)
+ls
 empty.txt  memo.txt  renamed_memo.txt
 
-$ rm empty.txt # 파일 삭제
-$ ls
+rm empty.txt # 파일 삭제
+ls
 memo.txt  renamed_memo.txt
 
-$ cd .. # 폴더 삭제 (상위 폴더로 이동 후 삭제)
-$ rm -rf workspace/
-$ ls  # workspace 폴더가 삭제됨
+cd .. # 폴더 삭제 (상위 폴더로 이동 후 삭제)
+rm -rf workspace/
+ls  # workspace 폴더가 삭제됨
 ```
 -- 트러블슈팅1: mv 명령어의 실행
 문제:
@@ -147,31 +144,12 @@ ls -ld backup     # 변경 후 확인 (모든 권한 개방 확인) 권한의 �
 ![permision_setting_log](./images/permision_setting_log.png) 
 
 4) Docker 운영/검증 로그
-
 -[x]Dockerfile은 직접 작성해야 한다.
 
-
-
 (1) Docker 설치 및 기본 점검
-
   docker --version, docker info 등 설치·점검 결과
   Docker 버전 확인 결과를 기록한다. (docker --version)
 Docker 데몬 동작 여부 확인 결과를 기록한다. (docker info 또는 동등 점검)
-
-
-
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
-
-
 
 (2) Docker 기본 운영 명령 수행
 
@@ -181,23 +159,29 @@ Docker 데몬 동작 여부 확인 결과를 기록한다. (docker info 또는 �
 운영: 로그 확인 (예: docker logs), 리소스 확인 (예: docker stats)
 수행 명령과 출력 결과를 기술 문서에 남긴다.
 
+```bash
+docker --version  #Docker 버전 확인
+docker info #버전 확인 결과
+
+```
+결과는 아래와 같다. Operating System: OrbStack 도 확인 가능하다.
+<스크린샷>
+![docker_info_1](./images/docker_info_1.png) 
+![docker_info_2](./images/docker_info_2.png) 
+
+
+(3) 컨테이너 실행 실습
+docker에서 hello-world 실행 성공을 기록한다.
+ubuntu 컨테이너를 실행하고 내부 진입 후 간단 명령(예: ls, echo) 수행 결과를 기록한다.
+컨테이너 종료/유지(attach/exec 등)의 차이를 스스로 관찰하고 간단히 정리한다.
+
 결과는 아래와 같다.
 <스크린샷>
 ![permision_setting_log](./images/permision_setting_log.png) 
 
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
 
 
-(3) 컨테이너 실행 실습
 
-hello-world 실행 성공을 기록한다.
-ubuntu 컨테이너를 실행하고 내부 진입 후 간단 명령(예: ls, echo) 수행 결과를 기록한다.
-컨테이너 종료/유지(attach/exec 등)의 차이를 스스로 관찰하고 간단히 정리한다.
 
 결과는 아래와 같다.
 <스크린샷>
@@ -349,9 +333,11 @@ Docker 볼륨을 생성하고 컨테이너에 연결한다.
 8) Git 설정 및 GitHub/VSCode 연동 증거
   Git 사용자 정보·기본 브랜치 설정 후, VSCode에서 GitHub 로그인 및 저장소 연동 완료
   민감한 개인 정보(ID/PW, 토큰 등)가 포함되지 않도록 주의한다.
-
 * Git 사용자 정보/기본 브랜치 설정을 완료하고 git config --list 결과를 기록한다.
 * GitHub 로그인 및 저장소 연동을 완료하고, 연동 증거(스크린샷 등)를 기술 문서에 첨부한다.
+
+<스크린샷>
+![git_setting](./images/git_setting.png) 
 
 결과는 아래와 같다.
 <스크린샷>
