@@ -24,23 +24,23 @@ Docker Version	24.0.x 이상
 Git Version	2.40.x 이상
 
 # 수행 항목 체크리스트
- - [ ]제출 저장소 및 기술문서
- - [ ]터미널 조작 로그 기록
- - [ ]권한 실습 및 증거 기록
- - [ ]Docker 설치 및 기본 점검
- - [ ]Docker 기본 운영 명령 수행
- - [ ]컨테이너 실행 실습
- - [ ]기존 Dockerfile 기반 커스텀 이미지 제작
- - [ ]포트 매핑 및 접속 증거
- - [ ]Docker 볼륨 영속성 검증
- - [ ]Git 설정 및 GitHub 연동
- - [ ]보안 및 개인정보 보호
+ -[x] 제출 저장소 및 기술문서
+ -[x] 터미널 조작 로그 기록
+ -[x] 권한 실습 및 증거 기록
+ -[x] Docker 설치 및 기본 점검
+ -[x] Docker 기본 운영 명령 수행
+ -[x] 컨테이너 실행 실습
+ -[x] 기존 Dockerfile 기반 커스텀 이미지 제작
+ -[x] 포트 매핑 및 접속 증거
+ -[x] Docker 볼륨 영속성 검증
+ -[x] Git 설정 및 GitHub 연동
+ -[x] 보안 및 개인정보 보호
 
- - [ ]보너스과제1. Docker Compose 기초
- - [ ]보너스과제2. Docker Compose 멀티 컨테이너
- - [ ]보너스과제3.Compose 운영 명령어 습득
- - [ ]보너스과제4.환경 변수 활용
- - [ ]보너스과제5.GitHub SSH 키 설정
+ -[x] 보너스과제1. Docker Compose 기초
+ -[x] 보너스과제2. Docker Compose 멀티 컨테이너
+ -[x] 보너스과제3.Compose 운영 명령어 습득
+ -[x] 보너스과제4.환경 변수 활용
+ -[x] 보너스과제5.GitHub SSH 키 설정
 
 # 결과 및 검증 방법
  
@@ -141,7 +141,7 @@ ls -ld backup     # 변경 후 확인 (모든 권한 개방 확인) 권한의 �
 
 결과는 아래와 같다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+![permission_setting_log](/Users/hrjeon112389/Codessey/images/permission_setting_log.png) 
 
 4) Docker 운영/검증 로그
 -[x]Dockerfile은 직접 작성해야 한다.
@@ -559,7 +559,7 @@ docker compose down 실행 후 docker compose ps -a를 쳐보세요. -> 컨테�
 
 결과는 아래와 같다.
 <스크린샷>
-![docker_status_check_routine](./images/docker_status_check_routine.png) 
+![docker_status](./images/docker_status.png) 
 
 
  보너스과제(4) 환경 변수 활용
@@ -693,7 +693,7 @@ f4e5d6c Docker NGINX 커스텀 서버 구축 완료
 
 결과는 아래와 같다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+![permission_setting_log](./images/permission_setting_log.png) 
 
 
 9) 보안 및 개인정보 보호
@@ -750,10 +750,6 @@ ssh -T git@github.com
 파일 위치: 보통 ~/.ssh/ 폴더 안에 안전하게 보관되어 있다는 것만 알고 계시면 됩니다.
 백업/이동: 만약 컴퓨터를 포맷하거나 다른 컴퓨터로 옮긴다면, 이 키를 복사해서 옮기거나 새 컴퓨터에서 다시 만들어야 합니다.
 
-
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
 
 트러블 슈팅
 문제: 접속 테스트(최종 검증) 시 거부됨: Permission denied (publickey).
