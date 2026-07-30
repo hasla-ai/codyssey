@@ -536,8 +536,9 @@ docker compose exec web curl api
 
   up, down, ps, logs를 사용해 실행/종료/상태/로그를 관리한다.
 배움 포인트: 운영 관점의 “상태 확인 루틴” 만들기
-- 컨테이너를 잘 띄우는 것만큼 중요한 것이 "지금 잘 돌아가고 있는지 확인하고, 문제가 생겼을 때 원인을 찾는 것"입니다. 운영의 핵심: 상태 확인 루틴 (Status Check Routine)
-실무자들은 컨테이너를 관리할 때 보통 아래 4단계 루틴을 반복합니다.
+- 컨테이너를 잘 띄우는 것만큼 중요한 것이 "지금 잘 돌아가고 있는지 확인하고, 문제가 생겼을 때 원인을 찾는 것"이다. 운영의 핵심: 상태 확인 루틴 (Status Check Routine)
+
+- 실무자들은 컨테이너를 관리할 때 보통 아래 4단계 루틴을 반복한다.
 
 ```bash
 # 1단계: 실행 (up) // -d: 백그라운드 실행. 터미널을 계속 쓸 수 있게 해줍니다.
@@ -550,9 +551,11 @@ docker compose logs -f --tail=20
 docker compose down
 ```
 
-- 가시성: 눈에 보이지 않는 컨테이너 내부 상황을 ps와 logs로 시각화할 수 있습니다.
-- 자원 관리: down을 생활화하면 쓰지 않는 컨테이너가 메모리를 잡아먹는 일을 방지할 수 있습니다.
-- 신속한 대응: 서비스가 안 될 때 가장 먼저 logs를 보는 습관이 개발 시간을 수십 배 단축해 줍니다.
+- 가시성: 눈에 보이지 않는 컨테이너 내부 상황을 ps와 logs로 시각화할 수 있다.
+- 자원 관리: down을 생활화하면 쓰지 않는 컨테이너가 메모리를 잡아먹는 일을 방지할 수 있다.
+- 신속한 대응: 서비스가 안 될 때 가장 먼저 logs를 보는 습관이 개발 시간을 수십 배 단축해 준다.
+- docker compose stop 실행 후 docker compose ps -a를 쳐보세요. -> 컨테이너가 Exited 상태로 남아있다.
+docker compose down 실행 후 docker compose ps -a를 쳐보세요. -> 컨테이너가 목록에서 완전히 사라진다.
 
 결과는 아래와 같다.
 <스크린샷>
@@ -562,75 +565,105 @@ docker compose down
  보너스과제(4) 환경 변수 활용
   Dockerfile 또는 Compose에서 환경 변수를 주입해 서버 포트/모드를 바꿔본다.
 배움 포인트: 설정과 코드의 분리
+ - 환경 변수(Environment Variables) 활용 단계: "코드와 설정을 분리한다"는 원칙은 현대 개발(The Twelve-Factor App)에서 매우 중요하다. 똑같은 이미지라도 환경 변수만 바꾸면 '개발용'이 되기도 하고 '배포용'이 되기도 하다.
 
-결과는 아래와 같다.
+ ```bash
+# 프로젝트 루트 폴더에 환경 변수를 저장할 파일: .env 파일
+## .gitignore에 추가하는 것이 관례
+### 보안상 중요한 정보(비밀번호, API 키 등)가 GitHub에 올라가지 않도록 설정합니다.
+cat <<EOF > .env
+WEB_PORT=8082
+APP_ENV=development
+EOF
+# 1. .env 파일을 .gitignore에 추가하기 (터미널) 
+### >>는 파일의 기존 내용 뒤에 새로운 내용을 덧붙이는 명령어
+## 보안상 중요한 정보(비밀번호, API 키 등)가 GitHub에 올라가지 않도록 설정합니다.
+echo ".env" >> .gitignore
+# 설정이 잘 되었는지 확인합니다.
+cat .gitignore
+# 2. .env 파일 생성 및 변수 설정
+cat <<EOF > .env
+WEB_PORT=8082
+APP_ENV=development
+EOF
+```
+결과는 아래와 같습니다다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+![env_variables_gitignore](./images/env_variables_gitignore.png) 
 
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
+
+이제 docker-compose.yml 파일을 열어 하드코딩된 숫자 대신 ${변수명} 형식을 사용하도록 수정합니다. 
+```yaml
+# docker-compose.yml 수정 (변수 문법 적용)
+version: '3.8'
+
+services:
+  web:
+    image: nginx
+    ports:
+      # ${WEB_PORT}는 .env 파일의 8082로 치환됩니다.
+      - "${WEB_PORT}:80"
+    environment:
+      # 컨테이너 내부 환경변수로 APP_MODE를 전달합니다.
+      - APP_MODE=${APP_ENV}
+    volumes:
+      - ./html:/usr/share/nginx/html
+
+  api:
+    image: traefik/whoami
+```
+결과 검증 (중요!)
+ - 명령어를 실행하기 전에, Docker가 변수를 제대로 인식했는지 터미널에서 확인합니다.
+
+``` bash
+# ① 변수 치환 결과 확인
+docker compose config
+## 확인 포인트: 출력된 내용 중에 ports: - "8082:80"이라고 나오나요? 그렇다면 성공
+
+# ② 컨테이너 실행 및 확인
+docker compose up -d
+
+# 실행 상태 확인 (8082 포트 확인)
+docker compose ps
+
+# ③ 컨테이너 내부 환경변수 확인: 실제로 APP_MODE가 주입되었는지 확인합니다.
+
+docker compose exec web env | grep APP_MODE
+## 결과: APP_MODE=development가 출력되어야 합니다.
+```
+
+결과는 아래와 같습니다다.
+<스크린샷>
+![env_variables_configurable_system](./images/env_variables_configurable_system.png) 
+
+
+  환경 변수(Environment Variables) 활용으로, .env 파일을 만들어 설정값을 관리하고, docker-compose.yml에서 이 변수들을 불러와 포트 번호와 실행 모드를 변경했습니다. 
+
+- 변수 WEB_PORT 가	설정값 8082	호스트 포트 적용되어 docker compose ps에서 8082 확인했고,
+- 변수 APP_ENV 가	설정값 development 를 컨테이너 내부 환경변수에서 적용하여	exec env 명령어로 확인되었습니다.
+
+[핵심] 설정과 코드의 분리
+  이와 같은 설정과 코드의 분리가 핵심입니다.
+  기존 방식은	포트 번호를 바꾸려면 docker-compose.yml 코드를 직접 수정해야 했는데, 환경 변수 방식	코드는 그대로 두고 .env 파일의 숫자만 바꾸면 됩니다. 즉,
+  1. 보안(비밀번호 등) 유지, 2. 개발/테스트/운영 환경 전환 용이
+  하다는 장점이 있습니다.
+
+요약하면, 
+.gitignore: 보안을 위해 설정 파일(.env)은 Git에 올리지 않는다.
+${VARIABLE}: docker-compose.yml에서 외부 변수를 가져오는 표준 문법이다.
+docker compose config: 실행 전 설정 오류를 잡아내는 아주 유용한 습관이다.
+
+  이제 환경 변수까지 마스터하셨으니, 어떤 환경에서도 유연하게 돌아가는 "설정 가능한(Configurable) 시스템"을 만드실 수 있게 되었습니다.
+
+(참고: 실제 협업 시에는 .env는 커밋하지 않고 .env.example 파일을 만들어 공유하는 것이 매너입니다!)
 
 
 8) Git 설정 및 GitHub/VSCode 연동 증거
-  Git 사용자 정보·기본 브랜치 설정 후, VSCode에서 GitHub 로그인 및 저장소 연동 완료
+
+ Git 사용자 정보·기본 브랜치 설정 후, VSCode에서 GitHub 로그인 및 저장소 연동 완료
   민감한 개인 정보(ID/PW, 토큰 등)가 포함되지 않도록 주의한다.
 * Git 사용자 정보/기본 브랜치 설정을 완료하고 git config --list 결과를 기록한다.
 * GitHub 로그인 및 저장소 연동을 완료하고, 연동 증거(스크린샷 등)를 기술 문서에 첨부한다.
-
-<스크린샷>
-![git_setting](./images/git_setting.png) 
-
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
-
-
-9) 보안 및 개인정보 보호
-* 기술 문서/로그/스크린샷에 토큰, 비밀번호, 개인키, 인증 코드 등이 포함되지 않도록 마스킹한다.
-* 의심되는 민감정보가 노출된 경우, 즉시 히스토리/문서에서 제거하고 재발급 절차를 수행한다 (가능한 범위에서).
-
- 보너스과제(5) GitHub SSH 키 설정
-HTTPS 대신 SSH로 푸시가 가능하도록 키를 등록하고 동작을 확인한다.
-배움 포인트: 인증 방식 차이와 보안 습관
-
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
-
-```Bash
-# 1. 변경 전 권한 확인
-$ ls -l test_file.txt
-$ ls -ld test_dir
-
-# 2. 파일 및 디렉터리 권한 변경
-$ chmod 755 test_file.txt
-$ chmod 700 test_dir
-
-# 3. 보안 파일 접근 제한 (Owner Only)
-$ chmod 600 app.log
-
-# 4. 변경 후 권한 및 메타데이터 확인
-$ ls -l app.log
--rw------- 1 username staff 0 Jul 28 12:48 app.log
-```
-권한 체계 요약
-755 (rwxr-xr-x): 소유자 전체 권한, 그룹/기타 실행 및 읽기 (실행 파일/디렉터리 기본)
-644 (rw-r--r--): 소유자 읽기/쓰기, 그룹/기타 읽기 (일반 문서 기본)
-600 (rw-------): 소유자 전용 읽기/쓰기 (보안 파일 격리)
-
-## **8.Git 설정 및 저장소 버전 관리 (Git & VSCode)**
 
 ```Bash
 # Git 환경 설정
@@ -655,5 +688,93 @@ f4e5d6c Docker NGINX 커스텀 서버 구축 완료
 
 ```
 
-보안 및 민감정보 관리 안내
- .gitignore 파일을 활용하여 환경변수(*.env), 비밀키 및 인증 토큰 파일이 외부 GitHub 저장소에 노출되지 않도록 처리하였습니다.
+<스크린샷>
+![git_setting](./images/git_setting.png) 
+
+결과는 아래와 같다.
+<스크린샷>
+![permision_setting_log](./images/permision_setting_log.png) 
+
+
+9) 보안 및 개인정보 보호
+* 기술 문서/로그/스크린샷에 토큰, 비밀번호, 개인키, 인증 코드 등이 포함되지 않도록 마스킹한다.
+* 의심되는 민감정보가 노출된 경우, 즉시 히스토리/문서에서 제거하고 재발급 절차를 수행한다 (가능한 범위에서).
+
+보너스과제(5) GitHub SSH 키 설정
+HTTPS 대신 SSH로 푸시가 가능하도록 키를 등록하고 동작을 확인한다.
+배움 포인트: 인증 방식 차이와 보안 습관
+
+- HTTPS 방식은 매번 아이디/비밀번호(또는 토큰)를 입력해야 할 때가 있지만, SSH(Secure Shell)를 사용하면 훨씬 안전하고 편리하게 통신할 수 있습니다. 특히 보안 가이드라인에 따라 민감 정보를 노출하지 않는 습관을 기르는 것이 이번 과제의 핵심입니다.
+
+- HTTPS: 설정이 간편하지만, 토큰 관리나 반복적인 인증이 필요할 수 있음.
+- SSH: 초기 설정이 필요하지만, 한 번 등록하면 키 쌍(Key Pair)을 통해 암호 없이 안전하게 통신 가능. **"설정(공개키)은 공개하고, 열쇠(개인키)는 나만 갖는다"**는 보안 원칙을 배울 수 있음.
+
+``` bash 
+# ① SSH 키 쌍 생성
+ssh-keygen -t ed25519 -C "your_email@example.com"
+
+## Enter file in which to save the key: 그냥 Enter를 누르세요 (기본 경로 사용).
+## Enter passphrase: 추가 보안을 원하면 입력하고, 번거롭다면 그냥 Enter를 두 번 누르세요.
+
+# ② 공개키(Public Key) 확인 및 복사
+# 생성된 두 개의 키 중 .pub으로 끝나는 공개키만 GitHub에 등록합니다. 절대로 .pub이 없는 개인키(Private Key)를 남에게 보여주거나 공유하면 안 됩니다!
+
+cat ~/.ssh/id_ed25519.pub
+# [출력 결과 예시 - 보고서 작성 시 마스킹 필수!]
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI...[REDACTED/MASKED]... user@email.com
+
+## ③ GitHub에 등록: GitHub 우측 상단 프로필 클릭 -> Settings
+왼쪽 메뉴에서 SSH and GPG keys 클릭 -> New SSH key 버튼 클릭 ->
+Title은 My Mac 등으로 정하고, Key 부분에 위에서 복사한 내용을 붙여넣기
+
+# 2. Git 원격 저장소 주소를 SSH로 변경
+##기존에 HTTPS로 설정된 주소를 SSH 형식으로 바꿉니다.
+
+### 접속 테스트 (최종 검증)
+ssh -T git@github.com
+
+# [성공 시 출력 결과]
+# Hi username! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+실습 결과를 보고서나 로그로 남길 때, 아래 규칙을 반드시 지키세요.
+
+- 개인키 노출 금지: ~/.ssh/id_ed25519 (확장자 없는 파일)의 내용은 절대 캡처하거나 텍스트로 올리지 마세요.
+- 공개키 마스킹: 보고서에 공개키를 포함해야 한다면 중간 부분을 [REDACTED] 또는 ****로 가리세요.
+- 실수했을 때: 만약 개인키가 GitHub에 올라갔다면, 즉시 해당 키를 GitHub에서 삭제하고 터미널에서 파일을 지운 뒤 다시 생성해야 합니다.
+
+결과는 아래와 같다.
+<스크린샷>
+![permision_setting_log](./images/permision_setting_log.png) 
+
+트러블 슈팅
+문제: 접속 테스트(최종 검증) 시 거부됨: Permission denied (publickey).
+가설: Mac(Codessey) 공용컴퓨터 문제인가?
+확인: 키가 있어도 Mac의 SSH 에이전트가 그 키를 사용하도록 설정되지 않았을 수 있습니다.
+해결: 아래와 같이 키를 에이전트에 추가.
+
+```bash
+ls -al ~/.ssh # SSH 키가 실제로 있는지 확인
+  # 목록에 id_ed25519와 id_ed25519.pub이 보이므로 키 생성되었음.
+
+# 1. SSH 에이전트 실행
+eval "$(ssh-agent -s)"
+
+# 2. 키를 에이전트에 추가 (Mac의 키체인에 저장)
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+## Identity added라는 메시지가 나오면 성공
+
+# 3단계: GitHub에 공개키가 등록되었는지 재확인
+cat ~/.ssh/id_ed25519.pub
+## 나오는 텍스트 전체(ssh-ed25519로 시작해서 이메일로 끝나는 한 줄)를 복사 후 새로 붙여넣기.
+ssh -T git@github.com
+##  다시 통신
+### 성공 시: Hi [본인ID]! You've successfully authenticated... 메시지가 뜹니다.
+```
+
+
+결과는 아래와 같다.
+<스크린샷>
+![SSH_setting.png](./images/SSH_setting.png) 
+
+끝
