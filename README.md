@@ -375,64 +375,74 @@ b32f3f240baa79cfaa6b9cee4eb19823b0d00e95cfd6921881256654fdfaa2a0
 ![web_server_container2](./images/web_server_container2.png) 
 
 
-
-  웹 서버 소스코드(예: app/ 또는 src/)
-  Dockerfile
-  빌드/실행 명령 및 결과 로그(터미널 스크린샷 가능)
-
-  포트 매핑 접속 성공 증거(스크린샷 또는 로그)
-
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
-
-
 6) 포트 매핑 접속 증거
 -[x]포트 매핑과 마운트/볼륨은 직접 설정하고 동작을 검증해야 한다.
 -[x]브라우저 접속 증거는 주소창(포트 포함)과 응답 화면이 함께 보이도록 한다.
 
 브라우저 접속 화면(또는 curl 응답)을 기술 문서에 첨부한다.
-
-  p <host_port>:<container_port>로 실행 후, 브라우저 접속 화면(주소창 포함)을 기술 문서에 첨부한다.
+웹 서버 환경의 구축
+ - 웹 서버 소스코드(예: app/ 또는 src/)
+ - Dockerfile
+ - 빌드/실행 명령 및 결과 로그(터미널 스크린샷 가능)
+ - 포트 매핑 접속 성공 증거(스크린샷 또는 로그)
 
 결과는 아래와 같다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
-
+![port_mapping.png](./images/port_mapping.png) 
 
 7) 바인드 마운트 반영 + 볼륨 영속성 증거
   바인드 마운트: 실행 명령 + 호스트 변경 전/후 비교
   Docker 볼륨: 생성/연결/검증 명령 + 컨테이너 삭제 전/후 비교
+ - Docker 볼륨을 생성하고 컨테이너에 연결한다.
+ - 컨테이너 삭제 전/후로 데이터를 확인하여 데이터가 유지됨을 증명한다.
+ - 기술 문서에 생성/연결/검증 절차(명령+출력)를 포함한다
 
-Docker 볼륨을 생성하고 컨테이너에 연결한다.
-컨테이너 삭제 전/후로 데이터를 확인하여 데이터가 유지됨을 증명한다.
-기술 문서에 생성/연결/검증 절차(명령+출력)를 포함한다
+```bash
+#바인드 마운트(Bind Mount) 목적: 호스트와 컨테이너의 파일 시스템(내 특정폴더) 실시간 동기화
+$ mkdir html
+$ echo "<h1>Before Change</h1>" > html/index.html
+
+$ docker run -d -p 8081:80 -v $(pwd)/html:/usr/share/nginx/html --name bind-mount-test nginx
+
+# [전] 브라우저 캡쳐(Before Change).
+# [중] 문구 변경
+$ echo '<h1>After Change - Bind Mount Success!</h1>' > html/index.html
+# [후] 브라우저 캡쳐(After Change - Bind Mount Success).
+```
 
 결과는 아래와 같다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+![bind_mount_before.png](./images/bind_mount_before.png) 
+![bind_mount_after.png](./images/bind_mount_after.png) 
 
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
 
+Docker 볼륨(Volume): 컨테이너 삭제 후에도 데이터 유지(영속성 증명, 주로 DB 데이터 저장)
+
+```bash
+# 볼륨 생성 및 확인
+$ docker volume create my-db-volume
+$ docker volume ls
+
+DRIVER    VOLUME NAME
+local     my-db-volume
+
+# 첫 번째 컨테이너 실행 및 데이터 쓰기
+docker run -it --name vol-test-1 -v my-db-volume:/app ubuntu bash
+# 컨테이너 내부 접속 후
+echo "Persistence Data" > /app/data.txt
+exit
+# 컨테이너 삭제 (데이터가 사라질까요?)
+docker rm vol-test-1
+# 두 번째 컨테이너 실행 및 데이터 확인
+docker run -it --name vol-test-2 -v my-db-volume:/app ubuntu bash
+# 컨테이너 내부 접속 후
+cat /app/data.txt
+# "Persistence Data"가 출력되면 성공!
+exit
+```
+결과는 아래와 같다.
+<스크린샷>
+![docker_volume_log](./images/docker_volume_log.png) 
 
  보너스과제(1) Docker Compose 기초
   docker-compose.yml의 기본 구조를 학습하고, 단일 서비스를 Compose로 실행한다.
