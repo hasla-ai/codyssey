@@ -693,7 +693,7 @@ f4e5d6c Docker NGINX 커스텀 서버 구축 완료
 
 결과는 아래와 같다.
 <스크린샷>
-![permission_setting_log](./images/permission_setting_log.png) 
+![permission_setting_log](/Users/hrjeon112389/Codessey/images/permission_setting_log.png) 
 
 
 9) 보안 및 개인정보 보호
