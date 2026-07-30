@@ -448,49 +448,115 @@ exit
   docker-compose.yml의 기본 구조를 학습하고, 단일 서비스를 Compose로 실행한다.
 배움 포인트: 컨테이너 실행 명령이 “문서화된 실행 설정”으로 바뀌는 이유
 
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+ - 문서화: 명령어가 파일로 저장되니, 나중에 봐도 "아, 이 컨테이너는 8081 포트를 썼구나!"라고 바로 알 수 있습니다.
+ - 협업: 이 파일만 팀원에게 주면, 팀원도 나와 똑같은 환경을 한 줄의 명령어로 실행할 수 있습니다.
+ - 관리: 여러 개의 컨테이너(DB, 웹서버, 캐시 등)를 한 번에 켜고 끌 수 있습니다.
 
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
+결과는 아래와 같다.
+
+```bash
+# 실행 중 컨테이너 정리
+$ docker stop bind-mount-test
+bind-mount-test
+$ docker rm bind-mount-test
+bind-mount-test
+
+# 문서화 된 컨테이너 정의
+cat <<EOF > docker-compose.yml
+version: '3.8'
+services:
+  web:
+    image: nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+    restart: always
+EOF
+# 컨테이너 업로드
+docker compose up -d
+# 컨테이너 확인
+docker compose ps
+
+```
+<스크린샷>
+![docker_compose_log](./images/docker_compose_log.png) 
 
 
  보너스과제(2) Docker Compose 멀티 컨테이너
+
   웹 서버 + (임의의 보조 서비스) 2개 이상을 Compose로 함께 실행한다.
   컨테이너 간 네트워크 통신이 가능한지 확인한다.
   배움 포인트: 네트워크/서비스 디스커버리 개념 맛보기
 
+ - Docker의 진정한 강력함인 멀티 컨테이너 오케스트레이션
+ - 서비스 디스커버리 (Service Discovery): Docker Compose로 실행된 컨테이너들은 자동으로 같은 네트워크에 소속됩니다. 이때 아주 놀라운 기능이 있는데, 서비스 이름이 곧 도메인 주소(IP)가 된다는 점입니다. web 컨테이너에서 api 컨테이너로 접속하고 싶다면? http://api라고 주소를 치면 됩니다.
+
+즉,
+- 멀티 컨테이너:	웹, DB, API 등 역할을 나누어 관리 (마이크로서비스 구조의 기초).
+- Default Network	Compose는 실행 시 자동으로 전용 네트워크를 생성함
+- Service Discovery	IP 주소 대신 api, db 같은 서비스 이름으로 서로를 찾음.
+
+```bash
+# 기존 파일을 수정하여 web(Nginx)과 api(Whoami - 접속 정보를 보여주는 가벼운 서비스) 두 개를 띄워보겠습니다.
+cat <<EOF > docker-compose.yml
+version: '3.8'
+
+services:
+  web:
+    image: nginx
+    ports:
+      - "8081:80"
+    volumes:
+      - ./html:/usr/share/nginx/html
+
+  api:
+    image: traefik/whoami
+    # 외부 노출 없이 내부 통신 확인용으로만 사용
+EOF
+# 컨테이너 실행
+docker compose up -d
+# 컨테이너 간 통신 검증 (핵심!)
+# 1) web 컨테이너에 접속하여 curl 설치: Nginx 기본 이미지에는 curl이 없으므로 설치가 필요합니다.
+docker compose exec web apt-get update
+docker compose exec web apt-get install -y curl
+# 2) 서비스 이름으로 통신 시도
+docker compose exec web curl api
+## 결과 확인:
+### 터미널에 Hostname: ..., IP: ... 같은 정보가 출력된다면 성공입니다!
+### web 컨테이너가 api라는 이름만으로 상대방의 IP를 찾아내어 통신에 성공한 것입니다.
+```
+
 결과는 아래와 같다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
+![multi_containor_service_discovery](./images/multi_containor_service_discovery.png) 
 
 
- 보너스과제(3) Compose 운영 명령어 습득
+보너스과제(3) Compose 운영 명령어 습득
+
   up, down, ps, logs를 사용해 실행/종료/상태/로그를 관리한다.
 배움 포인트: 운영 관점의 “상태 확인 루틴” 만들기
+- 컨테이너를 잘 띄우는 것만큼 중요한 것이 "지금 잘 돌아가고 있는지 확인하고, 문제가 생겼을 때 원인을 찾는 것"입니다. 운영의 핵심: 상태 확인 루틴 (Status Check Routine)
+실무자들은 컨테이너를 관리할 때 보통 아래 4단계 루틴을 반복합니다.
+
+```bash
+# 1단계: 실행 (up) // -d: 백그라운드 실행. 터미널을 계속 쓸 수 있게 해줍니다.
+docker compose up -d
+# 2단계: 목록 및 상태 확인 (ps) // STATUS가 Up인지, PORTS가 의도대로(8081->80) 연결되었는지 확인.
+docker compose ps
+# 3단계: 실시간 로그 모니터링 (logs) "컨테이너 내부"를 확인. (디버깅의 핵심!)
+docker compose logs -f --tail=20
+# 4단계: 종료 및 정리 (down) stop은 멈추기만 하지만, down은 컨테이너와 생성된 네트워크까지 모두 삭제
+docker compose down
+```
+
+- 가시성: 눈에 보이지 않는 컨테이너 내부 상황을 ps와 logs로 시각화할 수 있습니다.
+- 자원 관리: down을 생활화하면 쓰지 않는 컨테이너가 메모리를 잡아먹는 일을 방지할 수 있습니다.
+- 신속한 대응: 서비스가 안 될 때 가장 먼저 logs를 보는 습관이 개발 시간을 수십 배 단축해 줍니다.
 
 결과는 아래와 같다.
 <스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
-
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
+![docker_status_check_routine](./images/docker_status_check_routine.png) 
 
 
  보너스과제(4) 환경 변수 활용
@@ -542,61 +608,6 @@ HTTPS 대신 SSH로 푸시가 가능하도록 키를 등록하고 동작을 확�
 <스크린샷>
 ![permision_setting_log](./images/permision_setting_log.png) 
 
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
-
-
-
-
-
-### (1) 8080 포트 충돌 에러가 발생하는 경우
-만약 `Bind for 0.0.0.0:8080 failed: port is already allocated`와 같은 에러가 발생한다면, 이미 8080 포트를 사용하는 다른 컨테이너나 프로그램이 있는 것입니다.
-
-**해결 방법:**
-기존에 실행 중인 컨테이너를 중지하고 다시 실행합니다.
-
-```bash
-# 컨테이너 중지 및 삭제
-docker-compose down
-
-# 다시 실행
-docker-compose up -d
-```
-
-### (2) 수정 사항이 웹 페이지에 반영되지 않는 경우
-index.html을 수정했는데 브라우저에서 변하지 않는다면, 브라우저 캐시 문제일 수 있습니다.
-
-**해결 방법:**
-  브라우저에서 Ctrl + F5 (강제 새로고침)를 누르거나, 컨테이너를 재시작하세요.
-
-
-## ⚙️ 실행 방법
-이 프로젝트를 로컬 환경에서 실행하려면 아래 순서를 따르세요.
-
-1. **저장소 클론**
- GitHub에 올라와 있는 소스 코드를 내 컴퓨터로 통째로 복사해오는 과정입니다. 
-   git clone https://github.com/hasla-ai/codyssey.git
-
-2. **프로젝트 폴더로 이동 (CD - Change Directory)**
-다음 단계인 docker-compose 명령어를 실행하려면, 설정 파일(docker-compose.yml)이 있는 위치에서 명령어를 내립니다.
-
-   cd codyssey
-
-3. **Docker Compose 실행**
-docker-compose.yml 파일에 적힌 대로 NGINX 서버를 만들고 실행합니다.
-   docker-compose up -d
-
-4. **결과를 웹 브라우저에서 확인**
-내 컴퓨터(localhost)의 8080번 포트로 접속해서 NGINX가 잘 돌아가는지 확인합니다.
-   http://localhost:8080
-
-## **3.터미널 조작 로그**
-1. 파일 및 디렉터리 권한 설정 (File Permissions)
-시스템 메타데이터 보호 및 특정 사용자 isolation을 위한 권한 변경 작업 수행 결과입니다.
 
 ```Bash
 # 1. 변경 전 권한 확인
@@ -618,156 +629,6 @@ $ ls -l app.log
 755 (rwxr-xr-x): 소유자 전체 권한, 그룹/기타 실행 및 읽기 (실행 파일/디렉터리 기본)
 644 (rw-r--r--): 소유자 읽기/쓰기, 그룹/기타 읽기 (일반 문서 기본)
 600 (rw-------): 소유자 전용 읽기/쓰기 (보안 파일 격리)
-
-## **4. Docker & OrbStack 가상화 Layer 점검**
-2-1. 데몬 및 CLI 버전 점검
-
-```Bash
-$ docker --version
-Docker version 28.0.0, build f21b5a4
-
-$ docker info
-Client:
- Context:    default
- Debug Mode: false
-
-Server:
- Containers: 0
-  Running: 0
-  Paused: 0
-  Stopped: 0
- Server Version: 28.0.0
- Operating System: macOS (OrbStack Virtualization)
-```
-Troubleshooting NOTE: DOCKER_INSECURE_NO_IPTABLES_RAW 관련
-원인: 최신 Docker Engine(v28+)은 네트워크 포트 매핑 시 iptables의 raw 테이블 모듈을 요구하나, 호스트의 커널 환경에 해당 모듈(CONFIG_IP_NF_RAW)이 미포함되어 있을 때 워닝 발생.
-조치 및 영향: DOCKER_INSECURE_NO_IPTABLES_RAW=1 환경 변수를 통해 워크어라운드 적용. 컨테이너 간 네트워크 통신은 정상 작동하며 일반적인 개발 환경 실습에는 영향 없음.
-
-**4-2. 컨테이너 대화형(Interactive) 실습 & Exec vs Attach**
-```Bash
-# Hello-World 테스트 실행
-$ docker run hello-world
-
-# Interactive Ubuntu 컨테이너 실행
-$ docker run -it --name my-ubuntu ubuntu bash
-root@a1b2c3d4e5f6:/# cat /etc/os-release
-root@a1b2c3d4e5f6:/# ps aux
-root@a1b2c3d4e5f6:/# exit
-
-# 실행 및 종료된 컨테이너 목록 확인
-$ docker ps -a
-```
-## **5.Dockerfile 기반 웹 서버 컨테이너버 빌드 및 포트 매핑 (Custom Dockerfile)
-5-1. 프로젝트 구조 및 소스코드
-
-```Plaintext
-my-nginx-server/
-├── index.html
-├── Dockerfile
-└── docker-compose.yml
-```
-
-index.html
-
-```HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>My Custom Web Server</title>
-</head>
-<body>
-    <h1>안녕하세요! Docker로 만든 NGINX 서버입니다.</h1>
-    <p>성공적으로 포트 매핑이 완료되었습니다!</p>
-</body>
-</html>
-```
-
-Dockerfile
-
-```Dockerfile
-# 1. 베이스 이미지 설정
-FROM nginx:latest
-
-# 2. 커스텀 웹 페이지 복사 (한글 UTF-8 인코딩 포함)
-COPY index.html /usr/share/nginx/html/index.html
-
-# 3. 메타데이터 포트 노출
-EXPOSE 80
-```
-
-## **6. 이미지를 빌드하고 실행하는 과정(Build & Run)**
-가. 이미지를 생성한다(docker build): Dockerfile과 소스코드를 묶어 Immutable(불변) 상태의 이미지를 구워냅니다.
-
-```Bash
-# 8080 포트 연결
-$ docker run -d -p 8080:80 --name web-8080 my-web-server
-
-# 8081 포트 2회차 검증 연결
-$ docker run -d -p 8081:80 --name web-8081 my-web-server
-
-```
-
-나. 포트를 연결하고 컨테이너를 실행한다: 호스트 포트와 컨테이너 내부의 80번 포트를 서로 잇는 통로를 열어 백그라운드로 실행합니다.
-
-```
-
-
-```
-
-다. 접속을 테스트한다:로컬 엔드포인트에 요철을 보내 응답 HTML 데이터를 검증합니다.
-
-```Bash
-$ curl http://localhost:8080
-$ curl http://localhost:8081
-
-```
-## **7. 바인드 마운트 (Bind Mount) & 볼륨 (Volume) 데이터 영속성 검증**
-
-(1) 바인드 마운트: 실행 명령 + 호스트 변경 전/후 비교
-
-```Bash
-# 호스트의 현재 작업 디렉터리($(pwd))를 컨테이너 웹 경로에 라이브 마운트
-$ docker run -d \
-  -p 8082:80 \
-  --name nginx-bind \
-  -v $(pwd):/usr/share/nginx/html \
-  nginx:latest
-
-# 호스트에서 index.html 파일 수정 후 즉시 반영 확인 (재빌드 과정 없음)
-$ curl http://localhost:8082
-# 결과: "<p>성공적으로 포트 매핑이 완료되었습니다! 실시간으로 변합니다</p>" 포함 출력 확인
-
-```
-
-(2) Docker 볼륨: 생성/연결/검증 명령 + 컨테이너 삭제 전/후 비교
-
-```Bash
-# 1. 볼륨 생성 및 생성된 볼륨 기반 컨테이너 실행
-$ docker volume create my-data-vol
-
-$ docker run -d \
-  -p 8083:80 \
-  --name nginx-vol \
-  -v my-data-vol:/usr/share/nginx/html \
-  nginx:latest
-
-# 2. 볼륨 내부 데이터 작성
-$ docker exec nginx-vol sh -c "echo 'Volume Test Success' > /usr/share/nginx/html/test.txt"
-
-# 3. 데이터 저장 유무 확인 후 컨테이너 강제 삭제
-$ docker rm -f nginx-vol
-
-# 4. 동일한 볼륨을 새 컨테이너(nginx-vol-new)에 재연결하여 데이터 복원 유무 검증
-$ docker run -d \
-  -p 8083:80 \
-  --name nginx-vol-new \
-  -v my-data-vol:/usr/share/nginx/html \
-  nginx:latest
-
-$ curl http://localhost:8083/test.txt
-Volume Test Success # ➔ 컨테이너 삭제 후에도 데이터가 보존됨을 성공적으로 확인!
-```
 
 ## **8.Git 설정 및 저장소 버전 관리 (Git & VSCode)**
 
@@ -796,30 +657,3 @@ f4e5d6c Docker NGINX 커스텀 서버 구축 완료
 
 보안 및 민감정보 관리 안내
  .gitignore 파일을 활용하여 환경변수(*.env), 비밀키 및 인증 토큰 파일이 외부 GitHub 저장소에 노출되지 않도록 처리하였습니다.
-
-## 보너스 과제: Docker Compose 및 Docker Compose
-긴 CLI 옵션 입력 과정을 자동화하고 일관된 컨테이너 실행 환경을 보증하기 위해 docker-compose.yml을 작성하였습니다.
-
-```YAML
-# docker-compose.yml
-services:
-  my-web-server:
-    build: .
-    container_name: nginx-compose
-    ports:
-      - "8085:80"
-    volumes:
-      - .:/usr/share/nginx/html
-    restart: always
-```
-
-```Bash
-# Compose 단일 명령으로 이미지 빌드 및 백그라운드 실행
-$ docker-compose up -d
-
-# 접속 검증
-$ curl http://localhost:8085
-```
-
-
-
