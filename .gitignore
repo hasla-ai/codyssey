@@ -1,0 +1,25 @@
+# 1. 운영체제 임시 파일
+.DS_Store
+Thumbs.db
+
+# 2. 의존성 라이브러리 (용량이 크고 명령어로 재설치 가능)
+node_modules/
+/vendor/
+
+# 3. 빌드 결과물 및 로그
+/dist/
+/build/
+*.log
+
+# 4. 환경 변수 및 비밀 설정 (보안 필수!)
+.env
+*.config.js
+/config/secrets.json
+
+# 5. IDE(에디터) 설정 파일
+.vscode/
+.idea/
+*.swp
+
+# 6. Docker 관련 (필요 시)
+.dockerignore  # Docker 빌드 시 무시할 파일 목록 (Git과는 별개지만 관리 대상)
