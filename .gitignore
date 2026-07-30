@@ -22,4 +22,4 @@ node_modules/
 *.swp
 
 # 6. Docker 관련 (필요 시)
-.dockerignore  # Docker 빌드 시 무시할 파일 목록 (Git과는 별개지만 관리 대상)
+.dockerignore  # Docker 빌드 시 무시할 파일 목록 (Git과는 별개지만 관리 대상).env
