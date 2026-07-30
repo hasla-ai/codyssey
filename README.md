@@ -175,42 +175,140 @@ docker에서 hello-world 실행 성공을 기록한다.
 ubuntu 컨테이너를 실행하고 내부 진입 후 간단 명령(예: ls, echo) 수행 결과를 기록한다.
 컨테이너 종료/유지(attach/exec 등)의 차이를 스스로 관찰하고 간단히 정리한다.
 
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+```bash
+$ docker run hello-world
+# Docker Hello-World 
 
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pull complete 
+Digest: sha256:c3cbe1cc1aa588a64951ac6286e0df7b27fe2e6324b1001c619bb358770c0178
+Status: Downloaded newer image for hello-world:latest
 
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
 
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
 
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
 
-결과는 아래와 같다.
-<스크린샷>
-![permision_setting_log](./images/permision_setting_log.png) 
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
 
--- 트러블슈팅2:
-문제:
- 
-원인 가설:
-확인:
-해결/대안:
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
 
+# 1. ubuntu 이미지 다운로드 및 컨테이너 실행 (it 옵션은 터미널 상호작용을 위해 필수!)
+$ docker run -it ubuntu bash
+
+Unable to find image 'ubuntu:latest' locally
+latest: Pulling from library/ubuntu
+ed819469700f: Pull complete 
+a3679419df18: Pull complete 
+Digest: sha256:3131b4cc82a783df6c9df078f86e01819a13594b865c2cad47bd1bca2b7063bb
+Status: Downloaded newer image for ubuntu:latest
+root@e993cf72e85d:/# 
+
+# 2. 컨테이너 내부(root@...)에서 아래 명령어 입력.
+$ ls -al
+
+root@*********d:/# ls -al
+total 16
+drwxr-xr-x   1 root root   6 Jul 30 09:23 .
+drwxr-xr-x   1 root root   6 Jul 30 09:23 ..
+-rwxr-xr-x   1 root root   0 Jul 30 09:23 .dockerenv
+drwxr-xr-x   1 root root  26 Jul 13 16:06 .rock
+lrwxrwxrwx   1 root root   7 Apr 20 08:46 bin -> usr/bin
+drwxr-xr-x   1 root root   0 Apr 20 08:46 boot
+drwxr-xr-x   5 root root 340 Jul 30 09:23 dev
+drwxr-xr-x   1 root root  56 Jul 30 09:23 etc
+drwxr-xr-x   1 root root  12 Jul 13 16:06 home
+lrwxrwxrwx   1 root root   7 Apr 20 08:46 lib -> usr/lib
+lrwxrwxrwx   1 root root   9 Apr 20 08:46 lib64 -> usr/lib64
+drwxr-xr-x   1 root root   0 Jul 13 16:05 media
+drwxr-xr-x   1 root root   0 Jul 13 16:05 mnt
+drwxr-xr-x   1 root root   0 Jul 13 16:05 opt
+dr-xr-xr-x 305 root root   0 Jul 30 09:23 proc
+drwx------   1 root root  30 Jul 13 16:06 root
+drwxr-xr-x   1 root root  22 Jul 13 16:06 run
+lrwxrwxrwx   1 root root   8 Apr 20 08:46 sbin -> usr/sbin
+drwxr-xr-x   1 root root   0 Jul 13 16:05 srv
+dr-xr-xr-x  11 root root   0 Jul 30 09:23 sys
+drwxrwxrwt   1 root root   0 Jul 13 16:06 tmp
+drwxr-xr-x   1 root root  10 Jul 13 16:05 usr
+drwxr-xr-x   1 root root  90 Jul 13 16:06 var
+
+$ root@*********d: /# echo "Hello from Docker Ubuntu" # ls, echo 실행 시 화면 차이
+Hello from Docker Ubuntu
+
+$ root@*********d: /# cat /etc/os-release
+PRETTY_NAME="Ubuntu 26.04 LTS"
+NAME="Ubuntu"
+VERSION_ID="26.04"
+VERSION="26.04 LTS (Resolute Raccoon)"
+VERSION_CODENAME=resolute
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=resolute
+LOGO=ubuntu-logo
+
+# 3. 컨테이너에서 나오기
+$ exit
+$ root@*********d:/# exit
+exit
+hrjeon112389@c6r10s8 Codessey % 
+
+# 컨테이너 종료 vs 유지 (개념 정리)
+# 백그라운드에서 실행 (-d 옵션)
+$ docker run -d --name my-ubuntu ubuntu sleep infinity
+f04d39ce28ad8aa825ef6d8661ecc4070e0cfb23985cc1c3300c774666fc8100
+hrjeon112389@c6r10s8 Codessey % 
+# 실행 중인 컨테이너에 들어가기
+docker exec -it my-ubuntu bash
+root@*********d:
+# 여기서 exit으로 나와도 컨테이너는 계속 실행 중입니다!
+
+$ docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS              PORTS                                     NAMES
+f04d39ce28ad   ubuntu         "sleep infinity"         About a minute ago   Up About a minute                                             my-ubuntu
+8b31c2fdbb15   mac-quiz-app   "/docker-entrypoint.…"   11 hours ago         Up 11 hours         0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   dev-energy-quiz-container
+
+```
+run: 새로운 컨테이너를 만들고 실행함.
+-it로 들어가서 exit하면 컨테이너도 같이 멈춤.
+exec: 이미 실행 중인 컨테이너에 새로운 명령을 내리거나 접속함.
+exit으로 나와도 컨테이너는 죽지 않고 계속 돌아감.
+attach: 실행 중인 컨테이너의 메인 프로세스(표준 입출력)에 연결함. (잘못 종료하면 컨테이너가 멈출 수 있음)
 
 5) Dockerfile 기반 웹 서버 컨테이너
-
 아래 방식 중 하나를 선택하여 기존 Dockerfile/이미지 기반의 커스텀 이미지를 만든다.
 (A) 웹 서버 베이스 이미지 활용(예: NGINX/Apache 등) + 정적 콘텐츠/설정만 교체
 (B) Linux 베이스 이미지(예: ubuntu/alpine 등) + 기본 기능(패키지/사용자/환경변수/헬스체크 등) 추가
 
 제작 결과는 아래 조건을 만족해야 한다.
-커스텀 이미지 빌드 성공 및 컨테이너 실행 성공
+- 커스텀 이미지 빌드 성공 및 컨테이너 실행 성공
+
 기술 문서에 다음을 포함한다.
-어떤 “기존 베이스(이미지/예시 Dockerfile)”를 선택했는지
-내가 적용한 커스텀 포인트 각각의 목적(간단 요약)
-빌드/실행 명령 + 핵심 결과(출력/스크린샷)
+- 어떤 “기존 베이스(이미지/예시 Dockerfile)”를 선택했는지
+- 내가 적용한 커스텀 포인트 각각의 목적(간단 요약)
+- 빌드/실행 명령 + 핵심 결과(출력/스크린샷)
 
   웹 서버 소스코드(예: app/ 또는 src/)
   Dockerfile
   빌드/실행 명령 및 결과 로그(터미널 스크린샷 가능)
+  
   포트 매핑 접속 성공 증거(스크린샷 또는 로그)
 
 결과는 아래와 같다.
