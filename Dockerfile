@@ -1,7 +1,11 @@
-## 1. 베이스 이미지로 NGINX 최신 버전 사용
+# 1. 베이스 이미지 선택 (NGINX 최신 버전)
 FROM nginx:latest
-##  2. 호스트의 index.html 파일을 컨테이너 내부의 NGINX 기본 웹 경로로 복사
-# NGINX의 기본 경로: /usr/share/nginx/html
+
+# 2. 내가 만든 index.html을 컨테이너 내부의 웹 서버 경로로 복사
 COPY index.html /usr/share/nginx/html/index.html
-# 3. 80번 포트를 외부로 노출하겠다고 명시 (참고용)
+
+# 3. (선택) 환경 변수 설정 예시
+ENV SERVER_NAME="My-Docker-Server"
+
+# 4. 컨테이너가 사용할 포트 명시
 EXPOSE 80

@@ -292,7 +292,14 @@ exec: 이미 실행 중인 컨테이너에 새로운 명령을 내리거나 접�
 exit으로 나와도 컨테이너는 죽지 않고 계속 돌아감.
 attach: 실행 중인 컨테이너의 메인 프로세스(표준 입출력)에 연결함. (잘못 종료하면 컨테이너가 멈출 수 있음)
 
-5) Dockerfile 기반 웹 서버 컨테이너
+결과는 아래와 같다.
+<스크린샷>
+![container_run1](./images/container_run1.png) 
+![container_run2](./images/container_run2.png) 
+
+
+5) Dockerfile 기반 웹 서버 컨테이너 제작
+
 아래 방식 중 하나를 선택하여 기존 Dockerfile/이미지 기반의 커스텀 이미지를 만든다.
 (A) 웹 서버 베이스 이미지 활용(예: NGINX/Apache 등) + 정적 콘텐츠/설정만 교체
 (B) Linux 베이스 이미지(예: ubuntu/alpine 등) + 기본 기능(패키지/사용자/환경변수/헬스체크 등) 추가
@@ -305,10 +312,74 @@ attach: 실행 중인 컨테이너의 메인 프로세스(표준 입출력)에 �
 - 내가 적용한 커스텀 포인트 각각의 목적(간단 요약)
 - 빌드/실행 명령 + 핵심 결과(출력/스크린샷)
 
+<결과>
+
+선택한 베이스 이미지: nginx:latest (가볍고 강력한 웹 서버 엔진)
+커스텀 포인트:
+정적 콘텐츠 교체: 기본 NGINX 페이지 대신 직접 작성한 index.html을 COPY 명령어로 삽입.
+환경 변수 설정: ENV 명령어를 통해 서버 이름을 지정하는 연습 수행.
+
+```bash
+mkdir my-web-server
+cd my-web-server
+# index.html 파일 생성
+echo "<h1>Hello, Docker! This is My Custom Web Server.</h1>" > index.html
+# Dockerfile 작성
+touch Dockerfile
+
+cat <<EOF > Dockerfile
+FROM nginx:latest
+COPY index.html /usr/share/nginx/html/index.html
+EXPOSE 80
+EOF
+
+# 1. 이미지 빌드 (이름은 my-nginx, 버전은 1.0)
+docker build -t my-nginx:1.0 .
+
+# 2. 빌드된 이미지 확인
+docker images
+
+# 3. 컨테이너 실행 (내 컴퓨터의 8080 포트와 컨테이너의 80 포트 연결)
+docker run -d -p 8080:80 --name my-web-container my-nginx:1.0
+
+# 4. 결과 확인
+curl localhost:8080
+```
+-- 트러블슈팅2: 
+문제: port is already allocated
+원인 가설: 현재 사용 중인 컴퓨터(Host)의 8080 포트를 이미 다른 프로그램이나 이전에 실행한 컨테이너가 사용하고 있어서 충돌이 발생한 상황
+확인: 8080 대신 8081이나 9000 같은 다른 포트를 사용해 보세요. 맞음.
+해결/대안: 만약 이전에 실행했던 컨테이너가 8080을 잡고 있다면, 그 컨테이너를 중지하고 삭제해야 합니다.
+
+```bash
+$ docker ps
+
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS                                     NAMES
+f04d39ce28ad   ubuntu         "sleep infinity"         13 minutes ago   Up 13 minutes                                             my-ubuntu
+8b31c2fdbb15   mac-quiz-app   "/docker-entrypoint.…"   11 hours ago     Up 11 hours     0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   dev-energy-quiz-container
+
+# 1. 기존 퀴즈 앱 컨테이너 중지 및 삭제
+$ docker stop dev-energy-quiz-container
+$ docker rm dev-energy-quiz-container
+dev-energy-quiz-container
+dev-energy-quiz-container
+# 2. 아까 실패했던 내 웹 서버 다시 실행
+$ docker run -d -p 8080:80 --name my-web-container my-nginx:1.0
+b32f3f240baa79cfaa6b9cee4eb19823b0d00e95cfd6921881256654fdfaa2a0
+```
+
+결과는 아래와 같다.
+<스크린샷>
+![web_server_container1](./images/web_server_container1.png) 
+(트러블슈팅 결과)
+![web_server_container2](./images/web_server_container2.png) 
+
+
+
   웹 서버 소스코드(예: app/ 또는 src/)
   Dockerfile
   빌드/실행 명령 및 결과 로그(터미널 스크린샷 가능)
-  
+
   포트 매핑 접속 성공 증거(스크린샷 또는 로그)
 
 결과는 아래와 같다.
